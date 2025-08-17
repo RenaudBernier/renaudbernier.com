@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser RAM Stress Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                🚀 RAM Stress Test
+            </h1>
+            <p class="text-slate-300 text-lg">Push your browser's memory limits to the edge</p>
+        </div>
+        
+        <!-- Warning Card -->
+        <div class="bg-red-900/30 border border-red-500/50 rounded-xl p-6 mb-8 backdrop-blur-sm">
+            <div class="flex items-start space-x-3">
+                <div class="text-red-400 text-2xl">⚠️</div>
+                <div>
+                    <h3 class="text-red-400 font-semibold text-lg mb-2">Danger Zone</h3>
+                    <p class="text-red-200">This test will aggressively consume your browser's memory and may cause it to crash or freeze. Save any important work before proceeding. Use at your own risk!</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Control Panel -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 mb-8 border border-white/20">
+            <div class="flex flex-wrap gap-4 justify-center">
+                <button id="startBtn" onclick="startTest()" 
+                        class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold px-8 py-3 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    Start RAM Test
+                </button>
+                <button id="stopBtn" onclick="stopTest()" disabled
+                        class="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg disabled:hover:scale-100">
+                    Stop Test
+                </button>
+                <button id="clearBtn" onclick="clearMemory()" disabled
+                        class="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg disabled:hover:scale-100">
+                    Clear Memory
+                </button>
+            </div>
+        </div>
+        
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                <div class="text-blue-400 text-2xl mb-2">📊</div>
+                <div class="text-white text-2xl font-bold" id="imageCount">0</div>
+                <div class="text-slate-300">Images Created</div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                <div class="text-purple-400 text-2xl mb-2">💾</div>
+                <div class="text-white text-2xl font-bold" id="memoryUsed">0 MB</div>
+                <div class="text-slate-300">Memory Used</div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                <div class="text-green-400 text-2xl mb-2">⏱️</div>
+                <div class="text-white text-2xl font-bold" id="duration">0s</div>
+                <div class="text-slate-300">Duration</div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                <div class="text-orange-400 text-2xl mb-2">⚡</div>
+                <div class="text-white text-2xl font-bold" id="memoryRate">0 MB/s</div>
+                <div class="text-slate-300">Memory Rate</div>
+            </div>
+        </div>
+        
+        
+        <!-- Status -->
+        <div class="text-center">
+            <div id="status" class="text-xl font-semibold text-white bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20 inline-block">
+                Ready to test
+            </div>
+        </div>
+        
+        <!-- Hidden Image Container -->
+        <div id="imageContainer" class="hidden"></div>
+    </div>
+
+    <script>
+        let testRunning = false;
+        let images = [];
+        let imageDataArrays = [];
+        let startTime;
+        let testInterval;
+        let updateInterval;
+        let imageCount = 0;
+        let totalMemoryMB = 0;
+        let initialMemoryMB = 0;
+        let baseImage = null; // Store the base image once loaded
+        
+        // Use the big image file for accurate memory testing
+        const bigImagePath = 'Fronalpstock_big.jpg';
+        const bigImageSizeMB = 14.7; // Actual file size in MB
+        
+        function preloadBaseImage() {
+            return new Promise((resolve, reject) => {
+                if (baseImage) {
+                    resolve(baseImage);
+                    return;
+                }
+                
+                const img = new Image();
+                img.onload = function() {
+                    baseImage = img;
+                    console.log('Base image loaded successfully');
+                    resolve(img);
+                };
+                img.onerror = function(e) {
+                    console.error('Failed to load base image:', e);
+                    reject(e);
+                };
+                img.src = bigImagePath;
+            });
+        }
+        
+        async function startTest() {
+            if (testRunning) return;
+            
+            document.getElementById('status').textContent = 'Loading base image...';
+            
+            try {
+                // Preload the base image first
+                await preloadBaseImage();
+                
+                testRunning = true;
+                startTime = Date.now();
+                imageCount = 0;
+                totalMemoryMB = 0;
+                
+                // Capture initial memory if Chrome memory API is available
+                if (performance.memory) {
+                    initialMemoryMB = performance.memory.usedJSHeapSize / (1024 * 1024);
+                }
+                
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('clearBtn').disabled = true;
+                document.getElementById('status').textContent = 'Test running - Allocating memory...';
+                document.getElementById('imageContainer').style.display = 'block';
+                
+                // Start the memory allocation loop
+                testInterval = setInterval(allocateImageMemory, 500); 
+                
+                // Update UI every second
+                updateInterval = setInterval(updateUI, 1000);
+                
+                console.log('RAM stress test started');
+            } catch (error) {
+                document.getElementById('status').textContent = 'Error: Failed to load base image';
+                console.error('Cannot start test - base image failed to load:', error);
+            }
+        }
+        
+        function allocateImageMemory() {
+            try {
+                // Capture current imageCount for this specific allocation
+                const currentImageId = imageCount;
+                
+                // Mark start of allocation for performance measurement
+                performance.mark(`alloc-start-${currentImageId}`);
+                
+                // Log current memory usage on Chrome
+                if (performance.memory) {
+                    const used = (performance.memory.usedJSHeapSize / (1024 * 1024)).toFixed(1);
+                    const total = (performance.memory.totalJSHeapSize / (1024 * 1024)).toFixed(1);
+                    console.log(`Pre-allocation ${currentImageId}: ${used}MB used / ${total}MB total heap`);
+                }
+                
+                // Create canvas and clone the base image data
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size to match base image
+                canvas.width = baseImage.naturalWidth;
+                canvas.height = baseImage.naturalHeight;
+                
+                // Draw the base image to canvas (creates memory allocation)
+                ctx.drawImage(baseImage, 0, 0);
+                
+                // Store canvas ImageData for extra memory usage
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                imageDataArrays.push(imageData);
+                
+                // Also store canvas reference
+                images.push(canvas);
+                
+                // Mark end of allocation and measure duration
+                performance.mark(`alloc-end-${currentImageId}`);
+                const measure = performance.measure(
+                    `allocation-${currentImageId}`, 
+                    `alloc-start-${currentImageId}`, 
+                    `alloc-end-${currentImageId}`
+                );
+                
+                // Log post-allocation memory usage
+                if (performance.memory) {
+                    const used = (performance.memory.usedJSHeapSize / (1024 * 1024)).toFixed(1);
+                    const total = (performance.memory.totalJSHeapSize / (1024 * 1024)).toFixed(1);
+                    console.log(`Post-allocation ${currentImageId}: ${used}MB used / ${total}MB total heap (took ${measure.duration.toFixed(2)}ms)`);
+                }
+                
+                imageCount++;
+                
+                // Update memory counter based on browser capabilities
+                if (!performance.memory) {
+                    // Fallback to estimated calculation for non-Chrome browsers
+                    // Accurate memory calculation - 10109x4542 pixel image
+                    // Compressed JPEG: 14.7MB
+                    // Decoded RGBA: 10109 * 4542 * 4 bytes = 183.7MB per copy
+                    // We create: img element (183.7MB) + canvas (183.7MB) + ImageData (183.7MB)
+                    const decodedPixelsMB = (10109 * 4542 * 4) / (1024 * 1024); // 183.7MB
+                    const totalCopies = 3; // img + canvas + imageData
+                    const memoryPerImage = bigImageSizeMB + (decodedPixelsMB * totalCopies) + 50; // +50MB browser overhead
+                    totalMemoryMB += memoryPerImage;
+                }
+                // For Chrome, memory is updated in updateUI() function
+                
+                
+            } catch (error) {
+                console.error('Memory allocation failed:', error);
+                document.getElementById('status').textContent = `Error: ${error.message}`;
+                stopTest();
+            }
+        }
+        
+        function updateUI() {
+            if (!testRunning) return;
+            
+            const elapsed = (Date.now() - startTime) / 1000;
+            
+            // Update memory counter based on browser capabilities
+            if (performance.memory) {
+                // Use actual Chrome memory API - same as console logs
+                const currentMemoryMB = (performance.memory.usedJSHeapSize / (1024 * 1024)).toFixed(1);
+                totalMemoryMB = parseFloat(currentMemoryMB);
+            }
+            
+            const memoryRate = elapsed > 0 ? (totalMemoryMB / elapsed).toFixed(2) : 0;
+            
+            document.getElementById('imageCount').textContent = imageCount.toLocaleString();
+            document.getElementById('memoryUsed').textContent = `${totalMemoryMB.toFixed(1)} MB`;
+            document.getElementById('duration').textContent = `${elapsed.toFixed(0)}s`;
+            document.getElementById('memoryRate').textContent = `${memoryRate} MB/s`;
+            
+            
+            // Warning messages
+            if (totalMemoryMB > 500) {
+                document.getElementById('status').textContent = '⚠️ HIGH MEMORY USAGE - Browser may become unstable!';
+            } else if (totalMemoryMB > 200) {
+                document.getElementById('status').textContent = '⚡ Moderate memory pressure detected';
+            }
+        }
+        
+        function stopTest() {
+            testRunning = false;
+            
+            if (testInterval) clearInterval(testInterval);
+            if (updateInterval) clearInterval(updateInterval);
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('clearBtn').disabled = false;
+            document.getElementById('status').textContent = 'Test stopped';
+            
+            console.log(`Test stopped. Created ${imageCount} images, estimated ${totalMemoryMB.toFixed(1)} MB used`);
+        }
+        
+        
+        function clearMemory() {
+            // Clear all references to allow garbage collection
+            images = [];
+            imageDataArrays = [];
+            
+            // Clear DOM images
+            const container = document.getElementById('imageContainer');
+            container.innerHTML = '';
+            container.style.display = 'none';
+            
+            // Reset counters
+            imageCount = 0;
+            totalMemoryMB = 0;
+            initialMemoryMB = 0;
+            
+            // Update UI
+            document.getElementById('imageCount').textContent = '0';
+            document.getElementById('memoryUsed').textContent = '0 MB';
+            document.getElementById('duration').textContent = '0s';
+            document.getElementById('memoryRate').textContent = '0 MB/s';
+            document.getElementById('status').textContent = 'Memory cleared - Ready to test';
+            
+            document.getElementById('clearBtn').disabled = true;
+            
+            // Force garbage collection (if available)
+            if (window.gc) {
+                window.gc();
+                console.log('Garbage collection triggered');
+            }
+            
+            console.log('Memory cleared');
+        }
+        
+        // Handle page unload
+        window.addEventListener('beforeunload', function(e) {
+            if (testRunning) {
+                e.preventDefault();
+                e.returnValue = 'RAM test is still running. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+        
+        // Detect memory pressure (experimental)
+        if ('memory' in performance) {
+            setInterval(() => {
+                if (testRunning && performance.memory) {
+                    const used = performance.memory.usedJSHeapSize / (1024 * 1024);
+                    const total = performance.memory.totalJSHeapSize / (1024 * 1024);
+                    console.log(`Actual heap: ${used.toFixed(1)}MB / ${total.toFixed(1)}MB`);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
