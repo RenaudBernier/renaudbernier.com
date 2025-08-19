@@ -67,7 +67,7 @@
             <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                 <div class="text-purple-400 text-2xl mb-2">💾</div>
                 <div class="text-white text-2xl font-bold" id="memoryUsed">0 MB</div>
-                <div class="text-slate-300">Memory Used</div>
+                <div class="text-slate-300">Memory Used (Estimated)</div>
             </div>
             
             <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
@@ -132,14 +132,29 @@
             });
         }
         
+        function showLoadingMessage() {
+            const statusElement = document.getElementById('status');
+            let dotCount = 0;
+            
+            const loadingInterval = setInterval(() => {
+                dotCount = (dotCount + 1) % 4;
+                const dots = '.'.repeat(dotCount);
+                statusElement.textContent = `Downloading necessary files, please wait${dots}`;
+            }, 500);
+            
+            return loadingInterval;
+        }
+        
         async function startTest() {
             if (testRunning) return;
             
-            document.getElementById('status').textContent = 'Loading base image...';
+            const loadingInterval = showLoadingMessage();
             
             try {
                 // Preload the base image first
                 await preloadBaseImage();
+                
+                clearInterval(loadingInterval);
                 
                 testRunning = true;
                 startTime = Date.now();
@@ -165,6 +180,7 @@
                 
                 console.log('RAM stress test started');
             } catch (error) {
+                clearInterval(loadingInterval);
                 document.getElementById('status').textContent = 'Error: Failed to load base image';
                 console.error('Cannot start test - base image failed to load:', error);
             }
@@ -286,36 +302,92 @@
         
         
         function clearMemory() {
-            // Clear all references to allow garbage collection
-            images = [];
-            imageDataArrays = [];
+            document.getElementById('status').textContent = 'Clearing memory...';
             
-            // Clear DOM images
-            const container = document.getElementById('imageContainer');
-            container.innerHTML = '';
-            container.style.display = 'none';
-            
-            // Reset counters
-            imageCount = 0;
-            totalMemoryMB = 0;
-            initialMemoryMB = 0;
-            
-            // Update UI
-            document.getElementById('imageCount').textContent = '0';
-            document.getElementById('memoryUsed').textContent = '0 MB';
-            document.getElementById('duration').textContent = '0s';
-            document.getElementById('memoryRate').textContent = '0 MB/s';
-            document.getElementById('status').textContent = 'Memory cleared - Ready to test';
-            
-            document.getElementById('clearBtn').disabled = true;
-            
-            // Force garbage collection (if available)
-            if (window.gc) {
-                window.gc();
-                console.log('Garbage collection triggered');
+            // More aggressive memory clearing
+            try {
+                // Clear canvas contexts and free canvas memory
+                images.forEach(canvas => {
+                    if (canvas && canvas.getContext) {
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            // Clear the canvas
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        }
+                        // Set canvas dimensions to 0 to free GPU memory
+                        canvas.width = 0;
+                        canvas.height = 0;
+                    }
+                });
+                
+                // Null out ImageData references more explicitly
+                imageDataArrays.forEach((imageData, index) => {
+                    if (imageData && imageData.data) {
+                        // Try to null out the underlying ArrayBuffer
+                        imageData.data.fill(0);
+                    }
+                    imageDataArrays[index] = null;
+                });
+                
+                // Clear all array references
+                images.length = 0;
+                images = [];
+                imageDataArrays.length = 0;
+                imageDataArrays = [];
+                
+                // Clear DOM images
+                const container = document.getElementById('imageContainer');
+                container.innerHTML = '';
+                container.style.display = 'none';
+                
+                // Also clear the base image if it exists
+                if (baseImage) {
+                    baseImage.src = '';
+                    baseImage = null;
+                }
+                
+                // Reset counters
+                imageCount = 0;
+                totalMemoryMB = 0;
+                initialMemoryMB = 0;
+                
+                // Multiple garbage collection attempts
+                if (window.gc) {
+                    // Try multiple times for better cleanup
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            window.gc();
+                            console.log(`Garbage collection attempt ${i + 1}`);
+                        }, i * 100);
+                    }
+                } else {
+                    // For browsers without gc(), try to trigger it indirectly
+                    console.log('No window.gc available, trying alternative memory pressure');
+                    // Create and immediately discard large arrays to pressure GC
+                    for (let i = 0; i < 10; i++) {
+                        setTimeout(() => {
+                            const temp = new Array(1000000).fill(0);
+                            temp.length = 0;
+                        }, i * 10);
+                    }
+                }
+                
+                // Update UI after a brief delay to show clearing completed
+                setTimeout(() => {
+                    document.getElementById('imageCount').textContent = '0';
+                    document.getElementById('memoryUsed').textContent = '0 MB';
+                    document.getElementById('duration').textContent = '0s';
+                    document.getElementById('memoryRate').textContent = '0 MB/s';
+                    document.getElementById('status').textContent = 'Memory cleared - Ready to test';
+                    document.getElementById('clearBtn').disabled = true;
+                    
+                    console.log('Memory clearing completed');
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error during memory clearing:', error);
+                document.getElementById('status').textContent = 'Memory clear failed - Try refreshing page';
             }
-            
-            console.log('Memory cleared');
         }
         
         // Handle page unload
