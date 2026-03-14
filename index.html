@@ -18,7 +18,7 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      padding: 4rem 1.5rem;
+      padding: 2rem 1.5rem;
       line-height: 1.6;
     }
 
@@ -83,7 +83,17 @@
     hr {
       border: none;
       border-top: 1px solid #e0e0e0;
-      margin: 2rem 0;
+      margin: 1.25rem 0;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 2rem;
+    }
+
+    .two-col section {
+      min-width: 0;
     }
 
     h2 {
@@ -92,7 +102,7 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #999;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
     }
 
     .entry {
@@ -113,7 +123,7 @@
       display: flex;
       align-items: center;
       gap: 1rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
     }
 
     .achievement-text {
@@ -189,27 +199,28 @@
 
     <hr>
 
-    <section>
-      <h2>Education</h2>
-      <div class="entry">
-        <p class="entry-title">Concordia University</p>
-        <p class="entry-detail">B.Eng Software Engineering, Co-op &middot; Sep 2024 – May 2028</p>
-      </div>
-    </section>
+    <div class="two-col">
+      <section>
+        <h2>Education</h2>
+        <div class="entry">
+          <p class="entry-title">Concordia University</p>
+          <p class="entry-detail">B.Eng Software Engineering, Co-op</p>
+        <p class="entry-detail">Sep 2024 – May 2028</p>
+        </div>
+      </section>
 
-    <hr>
-
-    <section>
-      <h2>Experience</h2>
-      <div class="entry">
-        <p class="entry-title">Quantitative Technology Services Software Developer &middot; RBC Capital Markets</p>
-        <p class="entry-detail">Internship &middot; Jan 2026 – Present</p>
-      </div>
-      <div class="entry">
-        <p class="entry-title">Cybersecurity R&D &middot; KPMG Canada</p>
-        <p class="entry-detail">Internship &middot; May – Dec 2025</p>
-      </div>
-    </section>
+      <section>
+        <h2>Experience</h2>
+        <div class="entry">
+          <p class="entry-title">QTS Software Developer &middot; RBC Capital Markets</p>
+          <p class="entry-detail">Internship &middot; Jan 2026 – Present</p>
+        </div>
+        <div class="entry">
+          <p class="entry-title">Cybersecurity R&D &middot; KPMG Canada</p>
+          <p class="entry-detail">Internship &middot; May – Dec 2025</p>
+        </div>
+      </section>
+    </div>
 
     <hr>
 
@@ -235,24 +246,6 @@
           <p class="achievement-desc">Veritas — drag-and-drop MFA SDK for merchants with security dashboard and configurable challenge rules.</p>
         </div>
         <a class="achievement-link" href="https://github.com/achneerov/HackHarvard" aria-label="HackHarvard 2025 GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg></a>
-      </div>
-      <div class="achievement">
-        <div class="achievement-text">
-          <p class="achievement-title">CS Games 2025 <span class="achievement-place">— 2nd Place, Puzzle Hero</span></p>
-          <p class="achievement-desc">CTF competition. 300+ participants, 15+ universities.</p>
-        </div>
-      </div>
-      <div class="achievement">
-        <div class="achievement-text">
-          <p class="achievement-title">Stan Heaps Scholarship 2025</p>
-          <p class="achievement-desc">Recognizes exceptional academic achievement.</p>
-        </div>
-      </div>
-      <div class="achievement">
-        <div class="achievement-text">
-          <p class="achievement-title">Hello World 2024 <span class="achievement-place">— 2nd Place</span></p>
-          <p class="achievement-desc">SCS Concordia programming competition. 75 participants.</p>
-        </div>
       </div>
     </section>
 
