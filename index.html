@@ -276,6 +276,14 @@
       </div>
     </section>
 
+      <div class="achievement">
+        <div class="achievement-text">
+          <p class="achievement-title">Professional Rickroller</p>
+          <p class="achievement-desc" id="rickroll-count">Rickrolled — people</p>
+        </div>
+      </div>
+    </section>
+
     <hr>
 
     <footer style="text-align: center;">
@@ -283,6 +291,13 @@
     </footer>
   </main>
   <script>
+    fetch('/api/rickroll-count')
+      .then(r => r.json())
+      .then(({ count }) => {
+        document.getElementById('rickroll-count').textContent = `Rickrolled ${count} people`;
+      })
+      .catch(() => {});
+
     fetch('https://api.github.com/repos/RenaudBernier/renaudbernier.com/commits?per_page=1')
       .then(r => r.json())
       .then(([commit]) => {

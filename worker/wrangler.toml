@@ -1,0 +1,12 @@
+name = "rickroll"
+main = "rickroll.js"
+compatibility_date = "2025-05-12"
+
+routes = [
+  { pattern = "renaudbernier.com/portfolio", zone_name = "renaudbernier.com" },
+  { pattern = "renaudbernier.com/api/rickroll-count", zone_name = "renaudbernier.com" }
+]
+
+[[kv_namespaces]]
+binding = "RICKROLL_COUNTER"
+id = "22e28f6483f44d2faa985f2ca0817e6a"

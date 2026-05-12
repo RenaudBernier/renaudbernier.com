@@ -1,0 +1,6 @@
+.git
+.github
+.claude
+.wrangler
+worker
+node_modules
